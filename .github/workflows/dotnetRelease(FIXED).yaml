@@ -1,0 +1,108 @@
+name: .NET Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Release Name (for tracking)'
+        required: true
+        default: 'build-$(date +%Y%m%d)'
+      body:
+        description: 'Build notes/description'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Clean previous builds
+      run: rm -rf Release/ z/ 2>/dev/null || true
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    # Framework-dependent builds
+    - name: Publish win-x64
+      run: dotnet publish Program/Program.csproj -o Release/win-x64 -r win-x64 --self-contained false --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    - name: Publish linux-x64
+      run: dotnet publish Program/Program.csproj -o Release/linux-x64 -r linux-x64 --self-contained false --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    - name: Publish linux-arm64
+      run: dotnet publish Program/Program.csproj -o Release/linux-arm64 -r linux-arm64 --self-contained false --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    # Self-contained builds
+    - name: Publish win-x64-self-contained
+      run: dotnet publish Program/Program.csproj -o Release/win-x64-self-contained -r win-x64 --self-contained true --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    - name: Publish linux-x64-self-contained
+      run: dotnet publish Program/Program.csproj -o Release/linux-x64-self-contained -r linux-x64 --self-contained true --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    - name: Publish linux-arm64-self-contained
+      run: dotnet publish Program/Program.csproj -o Release/linux-arm64-self-contained -r linux-arm64 --self-contained true --framework net9.0 -p:PublishSingleFile=true -c Release
+
+    - name: Remove PDB Files
+      run: |
+        find Release/ -name "*.pdb" -type f -delete 2>/dev/null || true
+
+    - name: Generate checksums
+      run: |
+        cd Release
+        find . -type f ! -name "*.sha256" -exec sha256sum {} \; > checksums.sha256
+        echo "=== Generated Checksums ==="
+        cat checksums.sha256
+        cd ..
+
+    - name: Create Zip Files
+      run: |
+        mkdir -p z
+        cd Release
+        zip -r ../z/win-x64.zip win-x64/
+        zip -r ../z/linux-x64.zip linux-x64/
+        zip -r ../z/linux-arm64.zip linux-arm64/
+        zip -r ../z/win-x64-self-contained.zip win-x64-self-contained/
+        zip -r ../z/linux-x64-self-contained.zip linux-x64-self-contained/
+        zip -r ../z/linux-arm64-self-contained.zip linux-arm64-self-contained/  # ✅ FIXED
+        # Also zip the checksums
+        zip ../z/checksums.zip checksums.sha256
+        cd ..
+
+    - name: List generated files
+      run: |
+        echo "=== Files in Release/ ==="
+        find Release/ -type f | sort
+        echo ""
+        echo "=== Files in z/ ==="
+        ls -la z/
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: danhengserver-builds-${{ github.run_number }}
+        path: |
+          z/win-x64.zip
+          z/linux-x64.zip
+          z/linux-arm64.zip
+          z/win-x64-self-contained.zip
+          z/linux-x64-self-contained.zip
+          z/linux-arm64-self-contained.zip
+          z/checksums.zip
+          Release/checksums.sha256
+        retention-days: 30
+        if-no-files-found: error
+
+    - name: Summary
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "📦 Artifacts uploaded: danhengserver-builds-${{ github.run_number }}"
+        echo "🔢 Build number: ${{ github.run_number }}"
+        echo "📝 Notes: ${{ inputs.body }}"
