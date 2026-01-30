@@ -35,11 +35,12 @@ Some functions for the game might not support at the first time when new "Anime 
 
 ### Quick Start
 
-1. Download the executable file from [Action](https://github.com/EggLinks/DanhengServer/actions)
-2. Open the downloaded `DanhengServer.zip` and extract it to any folder __*preferably an English path__
-   (Optional) Download the `certificate.p12` from the WebServer folder of the source code to enable HTTPS mode, ensuring a more secure traffic
-3. Run GameServer.exe
-4. Run proxy, start the game, and enjoy!
+1. Go to releases and download the zip located there
+2. head to (https://gitlab.com/Dimbreath/turnbasedgamedata/-/tree/5e960aa11f83b9245c722087caa4621708aa770e) and press the code Button and "Zip"
+3. run the .exe and it will make files/folders for you
+4. create a folder called "resources" in the same place as the .exe file
+5. paste everything from the turnbasegamedata zip into the new resources folder and run it
+6. its done! have fun! (if you have issues try the steps under trouble shooting first, and if they don't work try the official discord server)
 
 ### Build
 
@@ -82,7 +83,6 @@ cd DanhengServer
 - Mission 100040119 (cannot complet automatically) (use /mission finish 100040119 to fix it)
 
 ## ❕️ Troubleshooting
-
 For solutions to common problems or assistance, please join our Discord server at [https://discord.gg/xRtZsmHBVj](https://discord.gg/xRtZsmHBVj)
 
 ## 🙌 Acknowledgements
